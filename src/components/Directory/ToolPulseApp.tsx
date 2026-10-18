@@ -34,6 +34,7 @@ import { OUTREACH_LEADS, OutreachLead } from '../../data/outreachLeads';
 import { AIStackQuizModal } from './AIStackQuizModal';
 import { CompanyAuditModal } from './CompanyAuditModal';
 import { PromptLibraryModal } from './PromptLibraryModal';
+import { BacklinkBadgeModal } from './BacklinkBadgeModal';
 
 const POPULAR_SHOWDOWNS = [
   { slugA: 'cursor', slugB: 'windsurf', label: 'Cursor vs Windsurf' },
@@ -84,6 +85,8 @@ export const ToolPulseApp: React.FC = () => {
   const [compareToolA, setCompareToolA] = useState<AITool>(AI_TOOLS[0]);
   const [compareToolB, setCompareToolB] = useState<AITool>(AI_TOOLS[1]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [badgeToolSlug, setBadgeToolSlug] = useState<string | undefined>(undefined);
   const [showSitemapModal, setShowSitemapModal] = useState(false);
   const [copiedSitemap, setCopiedSitemap] = useState(false);
 
@@ -292,6 +295,7 @@ export const ToolPulseApp: React.FC = () => {
       const quizLeads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
       const companyAudits = JSON.parse(localStorage.getItem('toolpulse_company_audits') || '[]');
       const promptLeads = JSON.parse(localStorage.getItem('toolpulse_prompt_leads') || '[]');
+      const badgeClaims = JSON.parse(localStorage.getItem('toolpulse_badge_claims') || '[]');
 
       const allRows: string[] = ['Email,Source,CompanyOrRole,Details,Budget,Date'];
       companyAudits.forEach((c: any) => {
@@ -299,6 +303,9 @@ export const ToolPulseApp: React.FC = () => {
       });
       quizLeads.forEach((q: any) => {
         allRows.push(`"${q.email}","AI Stack Quiz","${q.role}","Bottleneck: ${q.bottleneck} | Stack: ${(q.recommendedTools || []).join(';') || 'Custom'}","${q.budget}","${q.date}"`);
+      });
+      badgeClaims.forEach((b: any) => {
+        allRows.push(`"${b.email}","Founder Badge Claim","${b.tool} Founder","Slug: ${b.slug} | Theme: ${b.theme}","Dofollow Backlink","${b.date}"`);
       });
       promptLeads.forEach((p: any) => {
         allRows.push(`"${p.email}","Prompt Pack 100+ Download","Prompt Engineer","Curated AI Prompts & Templates","Free","${p.date}"`);
@@ -308,7 +315,7 @@ export const ToolPulseApp: React.FC = () => {
       });
 
       if (allRows.length === 1) {
-        alert('No leads captured yet! Test the quiz, company audit, prompt pack, or newsletter box to capture leads.');
+        alert('No leads captured yet! Test the quiz, company audit, badge claim, prompt pack, or newsletter box to capture leads.');
         return;
       }
 
@@ -566,6 +573,17 @@ export const ToolPulseApp: React.FC = () => {
             >
               <FileCode className="w-3.5 h-3.5 text-emerald-400" />
               <span>XML Sitemap & SEO Schema</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setBadgeToolSlug(undefined);
+                setShowBadgeModal(true);
+              }}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:text-white hover:bg-purple-500/20 transition font-semibold"
+            >
+              <Award className="w-3.5 h-3.5 text-purple-400" />
+              <span>Backlink Badges (Embed)</span>
             </button>
 
             <button
@@ -1527,9 +1545,18 @@ export const ToolPulseApp: React.FC = () => {
               </div>
             )}
 
-            {/* Affiliate CTA Box */}
+            {/* Affiliate CTA Box & Badge Embed */}
             <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs text-slate-400">Official vendor partner link with exclusive bonus access.</span>
+              <button
+                onClick={() => {
+                  setBadgeToolSlug(activeToolDetail.slug);
+                  setShowBadgeModal(true);
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500/50 hover:bg-slate-800 text-purple-300 font-bold text-xs flex items-center justify-center space-x-1.5 transition"
+              >
+                <Award className="w-3.5 h-3.5 text-purple-400" />
+                <span>Embed "{activeToolDetail.name}" Badge</span>
+              </button>
               <a
                 href={activeToolDetail.affiliateUrl}
                 target="_blank"
@@ -1835,6 +1862,14 @@ export const ToolPulseApp: React.FC = () => {
       {showPromptsModal && (
         <PromptLibraryModal
           onClose={() => setShowPromptsModal(false)}
+        />
+      )}
+
+      {/* BACKLINK BADGE & EMBED WIDGET MODAL */}
+      {showBadgeModal && (
+        <BacklinkBadgeModal
+          onClose={() => setShowBadgeModal(false)}
+          initialToolSlug={badgeToolSlug}
         />
       )}
     </div>
