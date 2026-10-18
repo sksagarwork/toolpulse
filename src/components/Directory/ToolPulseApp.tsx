@@ -14,7 +14,20 @@ import {
   FileCode,
   Copy,
   Check,
+  Mail,
+  DollarSign,
+  TrendingUp,
+  BarChart2,
 } from 'lucide-react';
+
+const POPULAR_SHOWDOWNS = [
+  { slugA: 'cursor', slugB: 'windsurf', label: 'Cursor vs Windsurf' },
+  { slugA: 'heygen', slugB: 'runway', label: 'HeyGen vs Runway' },
+  { slugA: 'midjourney', slugB: 'flux-ai', label: 'Midjourney vs Flux.1' },
+  { slugA: 'claude-ai', slugB: 'chatgpt-plus', label: 'Claude 3.5 vs ChatGPT' },
+  { slugA: 'jasper-ai', slugB: 'copy-ai', label: 'Jasper vs Copy.ai' },
+  { slugA: 'suno', slugB: 'udio', label: 'Suno vs Udio' },
+];
 
 export const ToolPulseApp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +43,21 @@ export const ToolPulseApp: React.FC = () => {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [showSitemapModal, setShowSitemapModal] = useState(false);
   const [copiedSitemap, setCopiedSitemap] = useState(false);
+
+  // Founder HUD & Outbound Click Tracking (Monetization Engine)
+  const [showFounderHud, setShowFounderHud] = useState(false);
+  const [outboundClicks, setOutboundClicks] = useState<{ [toolId: string]: number }>(() => {
+    try {
+      const saved = localStorage.getItem('toolpulse_clicks');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Newsletter Lead Magnet State
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
   // Submit tool form state
   const [submission, setSubmission] = useState<SubmissionPayload>({
@@ -48,12 +76,22 @@ export const ToolPulseApp: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const toolParam = params.get('tool');
     const catParam = params.get('category');
+    const compareParam = params.get('compare');
 
     if (toolParam) {
       const match = AI_TOOLS.find((t) => t.slug === toolParam || t.id === toolParam);
       if (match) setActiveToolDetail(match);
     } else if (catParam) {
       setSelectedCategory(catParam);
+    } else if (compareParam && compareParam.includes('-vs-')) {
+      const [slugA, slugB] = compareParam.split('-vs-');
+      const toolA = AI_TOOLS.find((t) => t.slug === slugA || t.id === slugA);
+      const toolB = AI_TOOLS.find((t) => t.slug === slugB || t.id === slugB);
+      if (toolA && toolB) {
+        setCompareToolA(toolA);
+        setCompareToolB(toolB);
+        setShowCompareModal(true);
+      }
     }
   }, []);
 
@@ -117,6 +155,60 @@ export const ToolPulseApp: React.FC = () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('tool');
     window.history.pushState({}, '', url.toString());
+  };
+
+  const handleOpenCompare = (slugA: string, slugB: string) => {
+    const a = AI_TOOLS.find((t) => t.slug === slugA || t.id === slugA) || AI_TOOLS[0];
+    const b = AI_TOOLS.find((t) => t.slug === slugB || t.id === slugB) || AI_TOOLS[1];
+    setCompareToolA(a);
+    setCompareToolB(b);
+    setShowCompareModal(true);
+    const url = new URL(window.location.href);
+    url.searchParams.set('compare', `${a.slug}-vs-${b.slug}`);
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleCloseCompare = () => {
+    setShowCompareModal(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('compare');
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleAffiliateClick = (tool: AITool) => {
+    const nextClicks = { ...outboundClicks, [tool.id]: (outboundClicks[tool.id] || 0) + 1 };
+    setOutboundClicks(nextClicks);
+    try {
+      localStorage.setItem('toolpulse_clicks', JSON.stringify(nextClicks));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const totalOutboundClicks = useMemo(() => {
+    return Object.values(outboundClicks).reduce((acc, curr) => acc + curr, 0);
+  }, [outboundClicks]);
+
+  const estimatedAffiliateEarnings = useMemo(() => {
+    // 12% trial-to-paid conversion rate * $22 average monthly affiliate commission
+    return Math.round(totalOutboundClicks * 0.12 * 22);
+  }, [totalOutboundClicks]);
+
+  const handleSubscribeNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    try {
+      const existing = JSON.parse(localStorage.getItem('toolpulse_subscribers') || '[]');
+      existing.push({ email: newsletterEmail, date: new Date().toISOString() });
+      localStorage.setItem('toolpulse_subscribers', JSON.stringify(existing));
+    } catch (err) {
+      console.error(err);
+    }
+    setNewsletterSubscribed(true);
+    setTimeout(() => {
+      setNewsletterEmail('');
+      setNewsletterSubscribed(false);
+    }, 4000);
   };
 
   // Filter & Search Logic
@@ -246,6 +338,92 @@ export const ToolPulseApp: React.FC = () => {
               <FileCode className="w-3.5 h-3.5 text-emerald-400" />
               <span>XML Sitemap & SEO Schema</span>
             </button>
+
+            <button
+              onClick={() => setShowFounderHud(!showFounderHud)}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-500/20 transition font-semibold"
+            >
+              <BarChart2 className="w-3.5 h-3.5 text-amber-400" />
+              <span>Founder HUD {totalOutboundClicks > 0 ? `(${totalOutboundClicks} Clicks · ~$${estimatedAffiliateEarnings})` : ''}</span>
+            </button>
+          </div>
+
+          {/* Founder Revenue & Click Analytics HUD */}
+          {showFounderHud && (
+            <div className="mt-4 p-5 rounded-2xl bg-slate-900/95 border border-amber-500/30 text-left shadow-xl space-y-4 max-w-2xl mx-auto">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-5 h-5 text-amber-400" />
+                  <span className="text-sm font-bold text-white">Founder Live Revenue & Organic Click HUD</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  Live Local Tracker
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[11px] text-slate-400 block">Outbound Affiliate Clicks</span>
+                  <span className="text-xl font-black text-white">{totalOutboundClicks}</span>
+                  <span className="text-[10px] text-emerald-400 flex items-center space-x-0.5 mt-0.5">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>Real-time link referrals</span>
+                  </span>
+                </div>
+
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[11px] text-slate-400 block">Est. Affiliate Pipeline</span>
+                  <span className="text-xl font-black text-amber-400">${estimatedAffiliateEarnings}</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">~12% conv @ $22 avg bounty</span>
+                </div>
+
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[11px] text-slate-400 block">Featured Placement Fee</span>
+                  <span className="text-xl font-black text-sky-400">$149 / mo</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">Paid direct sponsor tier</span>
+                </div>
+              </div>
+
+              {totalOutboundClicks > 0 ? (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Top Clicked Software</span>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(outboundClicks).map(([toolId, count]) => {
+                      const tool = AI_TOOLS.find((t) => t.id === toolId);
+                      return (
+                        <div key={toolId} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center space-x-2">
+                          <span className="font-semibold text-white">{tool?.name || toolId}</span>
+                          <span className="text-amber-400 font-bold font-mono">{count} clicks</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  Click on "Visit Tool" or any affiliate trial button to simulate and verify outbound tracking.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Popular High-Intent Versus Showdowns */}
+          <div className="pt-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
+              🔥 Popular AI Showdowns
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {POPULAR_SHOWDOWNS.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={() => handleOpenCompare(s.slugA, s.slugB)}
+                  className="px-3 py-1 rounded-lg bg-slate-900/80 hover:bg-sky-500/20 border border-slate-700/60 hover:border-sky-500/50 text-slate-300 hover:text-sky-300 text-xs font-medium transition flex items-center space-x-1"
+                >
+                  <span>{s.label}</span>
+                  <ArrowRight className="w-3 h-3 opacity-60" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -378,6 +556,7 @@ export const ToolPulseApp: React.FC = () => {
                 href={tool.affiliateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleAffiliateClick(tool)}
                 className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-sky-500 hover:text-slate-950 text-slate-200 text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
               >
                 <span>Visit Tool</span>
@@ -386,6 +565,47 @@ export const ToolPulseApp: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Organic Newsletter & Lifetime Deal Capture Box */}
+      <div className="rounded-3xl border border-sky-500/20 bg-gradient-to-r from-slate-900 via-sky-950/30 to-indigo-950/40 p-6 sm:p-10 text-center relative overflow-hidden shadow-2xl">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold uppercase tracking-wider">
+            <Mail className="w-3.5 h-3.5" />
+            <span>Weekly AI Drops & Private Discounts</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+            Get Top AI Software Deals Before Anyone Else
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300">
+            Join 5,400+ developers, agencies, and creators. We benchmark new generative AI tools every week and send exclusive free trial promos directly to your inbox.
+          </p>
+
+          {newsletterSubscribed ? (
+            <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>You're in! Check your inbox for this week's top 5 AI software comparisons.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubscribeNewsletter} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto pt-2">
+              <input
+                type="email"
+                required
+                placeholder="Enter your work email..."
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs transition shadow-lg shadow-sky-500/20 shrink-0"
+              >
+                Join Free →
+              </button>
+            </form>
+          )}
+          <span className="text-[11px] text-slate-500 block">No spam. One-click unsubscribe at any time.</span>
+        </div>
       </div>
 
       {/* TOOL DETAIL MODAL */}
@@ -476,6 +696,43 @@ export const ToolPulseApp: React.FC = () => {
               </div>
             </div>
 
+            {/* Direct Competitors / Alternatives (Internal Linking SEO & Discovery) */}
+            {activeToolDetail.alternatives && activeToolDetail.alternatives.length > 0 && (
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">
+                  Top Alternatives & Competitors
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {activeToolDetail.alternatives.map((altSlug) => {
+                    const altTool = AI_TOOLS.find((t) => t.slug === altSlug || t.id === altSlug);
+                    if (!altTool) return null;
+                    return (
+                      <div key={altSlug} className="inline-flex items-center space-x-1">
+                        <button
+                          onClick={() => handleOpenTool(altTool)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 hover:bg-slate-800 text-xs text-sky-400 flex items-center space-x-1.5 transition"
+                        >
+                          <span className="font-semibold">{altTool.name}</span>
+                          <span className="text-[10px] text-slate-500">({altTool.startingPrice})</span>
+                          <ArrowRight className="w-3 h-3 text-slate-400" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleCloseTool();
+                            handleOpenCompare(activeToolDetail.slug, altTool.slug);
+                          }}
+                          className="px-2 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-800 text-[10px] text-indigo-400 font-bold transition"
+                          title={`Compare ${activeToolDetail.name} vs ${altTool.name}`}
+                        >
+                          vs
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Affiliate CTA Box */}
             <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-400">Official vendor partner link with exclusive bonus access.</span>
@@ -483,6 +740,7 @@ export const ToolPulseApp: React.FC = () => {
                 href={activeToolDetail.affiliateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleAffiliateClick(activeToolDetail)}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-sky-500/25 transition text-center"
               >
                 Visit Official Site & Claim Free Trial →
@@ -497,7 +755,7 @@ export const ToolPulseApp: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl relative">
             <button
-              onClick={() => setShowCompareModal(false)}
+              onClick={handleCloseCompare}
               className="absolute top-5 right-5 text-slate-400 hover:text-white text-sm font-bold p-1"
             >
               ✕
@@ -575,6 +833,7 @@ export const ToolPulseApp: React.FC = () => {
                   href={compareToolA.affiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => handleAffiliateClick(compareToolA)}
                   className="text-sky-400 hover:underline font-bold"
                 >
                   Visit {compareToolA.name} →
@@ -583,6 +842,7 @@ export const ToolPulseApp: React.FC = () => {
                   href={compareToolB.affiliateUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => handleAffiliateClick(compareToolB)}
                   className="text-indigo-400 hover:underline font-bold"
                 >
                   Visit {compareToolB.name} →
