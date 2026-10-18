@@ -25,11 +25,15 @@ import {
   Users,
   Send,
   Award,
+  Building2,
+  FileText,
 } from 'lucide-react';
 import { BUYING_GUIDES, BuyingGuide } from '../../data/buyingGuides';
 import { AI_DEALS, AIDeal } from '../../data/aiDealsData';
 import { OUTREACH_LEADS, OutreachLead } from '../../data/outreachLeads';
 import { AIStackQuizModal } from './AIStackQuizModal';
+import { CompanyAuditModal } from './CompanyAuditModal';
+import { PromptLibraryModal } from './PromptLibraryModal';
 
 const POPULAR_SHOWDOWNS = [
   { slugA: 'cursor', slugB: 'windsurf', label: 'Cursor vs Windsurf' },
@@ -74,6 +78,8 @@ export const ToolPulseApp: React.FC = () => {
   const [activeToolDetail, setActiveToolDetail] = useState<AITool | null>(null);
   const [activeGuide, setActiveGuide] = useState<BuyingGuide | null>(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [showPromptsModal, setShowPromptsModal] = useState(false);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareToolA, setCompareToolA] = useState<AITool>(AI_TOOLS[0]);
   const [compareToolB, setCompareToolB] = useState<AITool>(AI_TOOLS[1]);
@@ -284,17 +290,25 @@ export const ToolPulseApp: React.FC = () => {
     try {
       const subscribers = JSON.parse(localStorage.getItem('toolpulse_subscribers') || '[]');
       const quizLeads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+      const companyAudits = JSON.parse(localStorage.getItem('toolpulse_company_audits') || '[]');
+      const promptLeads = JSON.parse(localStorage.getItem('toolpulse_prompt_leads') || '[]');
 
-      const allRows: string[] = ['Email,Source,Role,Bottleneck,Budget,Date'];
-      subscribers.forEach((s: any) => {
-        allRows.push(`"${s.email}","Weekly Newsletter Deals","General Subscriber","General","Unknown","${s.date}"`);
+      const allRows: string[] = ['Email,Source,CompanyOrRole,Details,Budget,Date'];
+      companyAudits.forEach((c: any) => {
+        allRows.push(`"${c.email}","B2B Company Audit","${c.companyName || 'Corporate'}","${c.teamSize || ''} team | ${c.website || ''}","${c.monthlySpend || 'Unknown'}","${c.date}"`);
       });
       quizLeads.forEach((q: any) => {
-        allRows.push(`"${q.email}","AI Stack Recommender Quiz","${q.role}","${q.bottleneck}","${q.budget}","${q.date}"`);
+        allRows.push(`"${q.email}","AI Stack Quiz","${q.role}","Bottleneck: ${q.bottleneck} | Stack: ${(q.recommendedTools || []).join(';') || 'Custom'}","${q.budget}","${q.date}"`);
+      });
+      promptLeads.forEach((p: any) => {
+        allRows.push(`"${p.email}","Prompt Pack 100+ Download","Prompt Engineer","Curated AI Prompts & Templates","Free","${p.date}"`);
+      });
+      subscribers.forEach((s: any) => {
+        allRows.push(`"${s.email}","Weekly Newsletter Deals","Subscriber","Deals & Software Updates","Free","${s.date}"`);
       });
 
       if (allRows.length === 1) {
-        alert('No leads captured yet! Test the quiz or newsletter box to capture leads.');
+        alert('No leads captured yet! Test the quiz, company audit, prompt pack, or newsletter box to capture leads.');
         return;
       }
 
@@ -515,6 +529,22 @@ export const ToolPulseApp: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setShowAuditModal(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black hover:opacity-95 transition shadow-lg shadow-amber-500/25"
+            >
+              <Building2 className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Free B2B Stack Audit (Save $1k+)</span>
+            </button>
+
+            <button
+              onClick={() => setShowPromptsModal(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 border border-emerald-500/40 text-emerald-300 hover:text-white hover:bg-slate-800 transition font-bold"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Prompt Pack (100+ Free)</span>
+            </button>
+
+            <button
               onClick={() => setShowCompareModal(true)}
               className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition"
             >
@@ -571,7 +601,7 @@ export const ToolPulseApp: React.FC = () => {
                     }`}
                   >
                     <Users className="w-3 h-3" />
-                    <span>Quiz Leads</span>
+                    <span>Captured Leads</span>
                   </button>
                   <button
                     onClick={() => setFounderHudTab('outreach')}
@@ -653,58 +683,140 @@ export const ToolPulseApp: React.FC = () => {
 
               {founderHudTab === 'leads' && (
                 <div className="space-y-3 text-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="font-bold text-white block">Captured High-Intent Quiz Leads</span>
-                      <p className="text-slate-400 text-[11px]">
-                        Users who completed the AI Stack Recommender quiz seeking custom toolkits.
-                      </p>
-                    </div>
-                    <button
-                      onClick={exportQuizLeadsCSV}
-                      className="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center space-x-1 shrink-0"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download Leads CSV</span>
-                    </button>
-                  </div>
-
                   {(() => {
-                    let leads: any[] = [];
+                    let quizLeads: any[] = [];
+                    let companyAudits: any[] = [];
+                    let promptLeads: any[] = [];
+                    let subscribers: any[] = [];
                     try {
-                      leads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+                      quizLeads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+                      companyAudits = JSON.parse(localStorage.getItem('toolpulse_company_audits') || '[]');
+                      promptLeads = JSON.parse(localStorage.getItem('toolpulse_prompt_leads') || '[]');
+                      subscribers = JSON.parse(localStorage.getItem('toolpulse_subscribers') || '[]');
                     } catch {}
-                    if (leads.length === 0) {
-                      return (
-                        <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-2">
-                          <Users className="w-6 h-6 text-slate-500 mx-auto" />
-                          <p className="text-slate-300 font-semibold">No quiz leads captured yet.</p>
-                          <p className="text-slate-500 text-[11px]">
-                            Click "AI Stack Quiz (Get Matched)" in the hero header to test lead capture.
-                          </p>
-                        </div>
-                      );
-                    }
+
+                    const totalLeads = quizLeads.length + companyAudits.length + promptLeads.length + subscribers.length;
+
                     return (
-                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                        {leads.map((l, idx) => (
-                          <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-white text-xs">{l.email}</span>
-                              <span className="text-[10px] text-slate-500">{new Date(l.date).toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex flex-wrap gap-1 text-[10px]">
-                              <span className="px-2 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800">{l.role}</span>
-                              <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800">{l.bottleneck}</span>
-                              <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800">{l.budget}</span>
-                            </div>
-                            {l.recommendedTools && (
-                              <span className="text-[10px] text-slate-400 block">
-                                Recommended: {l.recommendedTools.join(', ')}
-                              </span>
+                      <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div>
+                            <span className="font-bold text-white block">Multi-Channel Lead Pipeline ({totalLeads} Total)</span>
+                            <p className="text-slate-400 text-[11px]">
+                              B2B Stack Audits, AI Quiz recommendations, Prompt downloads & Newsletter subscribers.
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <button
+                              onClick={exportMasterLeadCSV}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold transition flex items-center space-x-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Export All ({totalLeads})</span>
+                            </button>
+                            {quizLeads.length > 0 && (
+                              <button
+                                onClick={exportQuizLeadsCSV}
+                                className="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center space-x-1"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Quiz Only</span>
+                              </button>
                             )}
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Pipeline breakdown metrics */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                          <div className="p-2 rounded-xl bg-slate-950 border border-amber-500/30">
+                            <span className="text-[10px] text-amber-400 font-bold block uppercase tracking-wider">B2B Audits</span>
+                            <span className="text-base font-extrabold text-white">{companyAudits.length}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-950 border border-sky-500/30">
+                            <span className="text-[10px] text-sky-400 font-bold block uppercase tracking-wider">Quiz Stacks</span>
+                            <span className="text-base font-extrabold text-white">{quizLeads.length}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-950 border border-emerald-500/30">
+                            <span className="text-[10px] text-emerald-400 font-bold block uppercase tracking-wider">Prompt Packs</span>
+                            <span className="text-base font-extrabold text-white">{promptLeads.length}</span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-slate-950 border border-indigo-500/30">
+                            <span className="text-[10px] text-indigo-400 font-bold block uppercase tracking-wider">Subscribers</span>
+                            <span className="text-base font-extrabold text-white">{subscribers.length}</span>
+                          </div>
+                        </div>
+
+                        {totalLeads === 0 ? (
+                          <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                            <Users className="w-6 h-6 text-slate-500 mx-auto" />
+                            <p className="text-slate-300 font-semibold">No leads captured yet.</p>
+                            <p className="text-slate-500 text-[11px]">
+                              Test the B2B Stack Audit, AI Stack Quiz, or Prompt Library modal to capture organic leads.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                            {/* B2B Audits First (Highest Value) */}
+                            {companyAudits.map((c, idx) => (
+                              <div key={`audit-${idx}`} className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-1.5">
+                                    <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">B2B Audit</span>
+                                    <span className="font-bold text-white text-xs">{c.companyName}</span>
+                                    {c.website && <span className="text-[10px] text-slate-400">({c.website})</span>}
+                                  </div>
+                                  <span className="text-[10px] text-slate-500">{new Date(c.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-300 font-mono">{c.email}</span>
+                                  <span className="text-emerald-400 font-semibold">{c.monthlySpend} · {c.teamSize} team</span>
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Quiz Leads */}
+                            {quizLeads.map((q, idx) => (
+                              <div key={`quiz-${idx}`} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-white text-xs">{q.email}</span>
+                                  <span className="text-[10px] text-slate-500">{new Date(q.date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1 text-[10px]">
+                                  <span className="px-2 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800">{q.role}</span>
+                                  <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800">{q.bottleneck}</span>
+                                  <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800">{q.budget}</span>
+                                </div>
+                                {q.recommendedTools && (
+                                  <span className="text-[10px] text-slate-400 block">
+                                    Stack: {q.recommendedTools.join(', ')}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+
+                            {/* Prompt Leads */}
+                            {promptLeads.map((p, idx) => (
+                              <div key={`prompt-${idx}`} className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/20 flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Prompt Pack</span>
+                                  <span className="text-white text-xs font-mono">{p.email}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-500">{new Date(p.date).toLocaleDateString()}</span>
+                              </div>
+                            ))}
+
+                            {/* Subscribers */}
+                            {subscribers.map((s, idx) => (
+                              <div key={`sub-${idx}`} className="p-2.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">Newsletter</span>
+                                  <span className="text-white text-xs font-mono">{s.email}</span>
+                                </div>
+                                <span className="text-[10px] text-slate-500">{new Date(s.date).toLocaleDateString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -1709,6 +1821,20 @@ export const ToolPulseApp: React.FC = () => {
         <AIStackQuizModal
           onClose={() => setShowQuizModal(false)}
           onSelectTool={(tool) => handleOpenTool(tool)}
+        />
+      )}
+
+      {/* B2B TECH STACK AUDIT MODAL */}
+      {showAuditModal && (
+        <CompanyAuditModal
+          onClose={() => setShowAuditModal(false)}
+        />
+      )}
+
+      {/* AI PROMPTS & WORKFLOW TEMPLATES MODAL */}
+      {showPromptsModal && (
+        <PromptLibraryModal
+          onClose={() => setShowPromptsModal(false)}
         />
       )}
     </div>
