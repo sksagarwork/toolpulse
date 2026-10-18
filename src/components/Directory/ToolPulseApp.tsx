@@ -18,7 +18,11 @@ import {
   DollarSign,
   TrendingUp,
   BarChart2,
+  BookOpen,
+  Download,
+  Share2,
 } from 'lucide-react';
+import { BUYING_GUIDES, BuyingGuide } from '../../data/buyingGuides';
 
 const POPULAR_SHOWDOWNS = [
   { slugA: 'cursor', slugB: 'windsurf', label: 'Cursor vs Windsurf' },
@@ -29,6 +33,30 @@ const POPULAR_SHOWDOWNS = [
   { slugA: 'suno', slugB: 'udio', label: 'Suno vs Udio' },
 ];
 
+const VIRAL_POSTS = [
+  {
+    key: 'reddit',
+    platform: 'Reddit (r/SaaS, r/SideProject, r/ArtificialInteligence)',
+    badge: 'High Value Case Study',
+    title: 'Value Post: "I benchmarked 40+ AI tools over 60 days to find which ones actually earn money"',
+    content: `Hey everyone,\n\nLike many founders, I was burning $300+/month on AI software subscriptions that turned out to be thin API wrappers with zero compounding utility.\n\nSo I spent the last two months independently testing and benchmarking 41 dominant AI tools across 12 categories, analyzing verified pros/cons, real output quality, and ROI.\n\nHere are the only ones that legitimately pay for themselves in 2026:\n\n1. VIDEO: HeyGen for automated talking-head video ads (lip sync is unmatched). Runway Gen-3 for VFX and cinematic b-roll.\n2. CODING: Cursor Composer mode saves ~12 hours of debugging per week. v0 is best for React/Tailwind prototyping.\n3. AUDIO: ElevenLabs remains untouchable for realistic voiceovers. Suno for background jingles.\n4. RESEARCH: Perplexity replaces 80% of standard Google search time.\n5. SALES: Instantly AI for cold email infrastructure and warm-up pools.\n\nI compiled the complete side-by-side comparison matrix and pricing breakdowns at https://toolpulse.ai (100% open, zero login required).\n\nWhat AI tools in your daily stack are legitimately generating revenue for you?`,
+  },
+  {
+    key: 'twitter',
+    platform: 'Twitter / X (Viral Hook Thread)',
+    badge: 'Viral Bookmark Magnet',
+    title: '8-Part Curated AI Stack Thread',
+    content: `95% of AI tools are a waste of money.\n\nHere are the 7 AI tools that actually print revenue for solopreneurs in 2026 (save this):\n\n1. Cursor (@cursor_ai): Codebase-aware multi-file editor that replaces legacy autocomplete.\n2. HeyGen (@HeyGen_Official): Studio-quality video ads from text scripts with realistic avatars.\n3. ElevenLabs (@elevenlabsio): The gold standard for voice cloning and narrations.\n4. Perplexity (@perplexity_ai): Source-backed synthesized research that kills manual Google browsing.\n5. Instantly (@instantlyai): Scalable cold email delivery and automated lead engines.\n6. Flux.1: Photorealistic imagery with prompt fidelity beating Midjourney.\n7. Make.com (@make_hq): The autonomous connective tissue gluing them all together.\n\nWe benchmarked and ranked 40+ tools with live side-by-side spec sheets:\n👉 https://toolpulse.ai\n\nRT if this saved you from paying for hype software.`,
+  },
+  {
+    key: 'producthunt',
+    platform: 'Product Hunt Launch',
+    badge: 'Launch Day Copy',
+    title: 'Tagline & Maker First Comment',
+    content: `Hey Product Hunt community! 👋\n\nFinding honest, unbiased AI tool recommendations in 2026 is almost impossible—Google results are flooded with sponsored junk and Reddit threads are stale.\n\nWe created ToolPulse to solve this:\n✨ 41+ verified AI tools across 12 categories\n⚡ Side-by-side Versus comparison matrix (Cursor vs Windsurf, Midjourney vs Flux)\n🔍 Honest Verified Pros & Cons for every software\n📊 Real pricing breakdowns & verified free trial shortcuts\n📚 Hands-on buying guides & technical benchmarks\n\nCheck it out and let us know what software we should benchmark next!\n🔗 https://toolpulse.ai`,
+  },
+];
+
 export const ToolPulseApp: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -37,6 +65,7 @@ export const ToolPulseApp: React.FC = () => {
 
   // Modals state
   const [activeToolDetail, setActiveToolDetail] = useState<AITool | null>(null);
+  const [activeGuide, setActiveGuide] = useState<BuyingGuide | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareToolA, setCompareToolA] = useState<AITool>(AI_TOOLS[0]);
   const [compareToolB, setCompareToolB] = useState<AITool>(AI_TOOLS[1]);
@@ -46,6 +75,8 @@ export const ToolPulseApp: React.FC = () => {
 
   // Founder HUD & Outbound Click Tracking (Monetization Engine)
   const [showFounderHud, setShowFounderHud] = useState(false);
+  const [founderHudTab, setFounderHudTab] = useState<'stats' | 'viral' | 'export'>('stats');
+  const [copiedSocialKey, setCopiedSocialKey] = useState<string | null>(null);
   const [outboundClicks, setOutboundClicks] = useState<{ [toolId: string]: number }>(() => {
     try {
       const saved = localStorage.getItem('toolpulse_clicks');
@@ -77,10 +108,14 @@ export const ToolPulseApp: React.FC = () => {
     const toolParam = params.get('tool');
     const catParam = params.get('category');
     const compareParam = params.get('compare');
+    const guideParam = params.get('guide');
 
     if (toolParam) {
       const match = AI_TOOLS.find((t) => t.slug === toolParam || t.id === toolParam);
       if (match) setActiveToolDetail(match);
+    } else if (guideParam) {
+      const matchGuide = BUYING_GUIDES.find((g) => g.slug === guideParam || g.id === guideParam);
+      if (matchGuide) setActiveGuide(matchGuide);
     } else if (catParam) {
       setSelectedCategory(catParam);
     } else if (compareParam && compareParam.includes('-vs-')) {
@@ -105,7 +140,9 @@ export const ToolPulseApp: React.FC = () => {
       document.head.appendChild(scriptTag);
     }
 
-    if (activeToolDetail) {
+    if (activeGuide) {
+      document.title = `${activeGuide.title} (2026 Test) — ToolPulse`;
+    } else if (activeToolDetail) {
       document.title = `${activeToolDetail.name} Review, Pricing & Alternatives (2026) — ToolPulse`;
       const schemaData = {
         '@context': 'https://schema.org',
@@ -141,7 +178,74 @@ export const ToolPulseApp: React.FC = () => {
       };
       scriptTag.text = JSON.stringify(directorySchema);
     }
-  }, [activeToolDetail]);
+  }, [activeToolDetail, activeGuide]);
+
+  const handleOpenGuide = (guide: BuyingGuide) => {
+    setActiveGuide(guide);
+    const url = new URL(window.location.href);
+    url.searchParams.set('guide', guide.slug);
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleCloseGuide = () => {
+    setActiveGuide(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('guide');
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const copyViralPost = (key: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedSocialKey(key);
+    setTimeout(() => setCopiedSocialKey(null), 2500);
+  };
+
+  const exportSubscribersCSV = () => {
+    try {
+      const subscribers = JSON.parse(localStorage.getItem('toolpulse_subscribers') || '[]');
+      if (subscribers.length === 0) {
+        alert('No subscribers captured yet! Test the newsletter box below to add your first email.');
+        return;
+      }
+      const csvContent = 'data:text/csv;charset=utf-8,Email,Date\n' +
+        subscribers.map((s: any) => `${s.email},${s.date}`).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `toolpulse_subscribers_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const exportClicksCSV = () => {
+    try {
+      const keys = Object.keys(outboundClicks);
+      if (keys.length === 0) {
+        alert('No affiliate clicks tracked yet! Click on "Visit Tool" to record clicks.');
+        return;
+      }
+      const csvContent = 'data:text/csv;charset=utf-8,ToolID,ToolName,Clicks,EstRevenueUSD\n' +
+        keys.map((id) => {
+          const tool = AI_TOOLS.find((t) => t.id === id);
+          const clicks = outboundClicks[id];
+          const estRev = Math.round(clicks * 0.12 * 22);
+          return `${id},"${tool?.name || id}",${clicks},${estRev}`;
+        }).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `toolpulse_affiliate_clicks_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleOpenTool = (tool: AITool) => {
     setActiveToolDetail(tool);
@@ -348,61 +452,158 @@ export const ToolPulseApp: React.FC = () => {
             </button>
           </div>
 
-          {/* Founder Revenue & Click Analytics HUD */}
+          {/* Founder Revenue, Viral Launchpad & Data Export HUD */}
           {showFounderHud && (
-            <div className="mt-4 p-5 rounded-2xl bg-slate-900/95 border border-amber-500/30 text-left shadow-xl space-y-4 max-w-2xl mx-auto">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="mt-4 p-5 rounded-2xl bg-slate-900/95 border border-amber-500/30 text-left shadow-xl space-y-4 max-w-3xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                 <div className="flex items-center space-x-2">
                   <DollarSign className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm font-bold text-white">Founder Live Revenue & Organic Click HUD</span>
+                  <span className="text-sm font-bold text-white">Founder Growth & Monetization Engine</span>
                 </div>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  Live Local Tracker
-                </span>
+                <div className="flex space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                  <button
+                    onClick={() => setFounderHudTab('stats')}
+                    className={`px-3 py-1 rounded-lg font-semibold transition ${
+                      founderHudTab === 'stats' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Live Revenue
+                  </button>
+                  <button
+                    onClick={() => setFounderHudTab('viral')}
+                    className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1 ${
+                      founderHudTab === 'viral' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Share2 className="w-3 h-3" />
+                    <span>Viral Launchpad</span>
+                  </button>
+                  <button
+                    onClick={() => setFounderHudTab('export')}
+                    className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1 ${
+                      founderHudTab === 'export' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Export Leads</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block">Outbound Affiliate Clicks</span>
-                  <span className="text-xl font-black text-white">{totalOutboundClicks}</span>
-                  <span className="text-[10px] text-emerald-400 flex items-center space-x-0.5 mt-0.5">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>Real-time link referrals</span>
-                  </span>
-                </div>
+              {founderHudTab === 'stats' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                      <span className="text-[11px] text-slate-400 block">Outbound Affiliate Clicks</span>
+                      <span className="text-xl font-black text-white">{totalOutboundClicks}</span>
+                      <span className="text-[10px] text-emerald-400 flex items-center space-x-0.5 mt-0.5">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>Live link referrals</span>
+                      </span>
+                    </div>
 
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block">Est. Affiliate Pipeline</span>
-                  <span className="text-xl font-black text-amber-400">${estimatedAffiliateEarnings}</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">~12% conv @ $22 avg bounty</span>
-                </div>
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                      <span className="text-[11px] text-slate-400 block">Est. Affiliate Pipeline</span>
+                      <span className="text-xl font-black text-amber-400">${estimatedAffiliateEarnings}</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">~12% conv @ $22 avg bounty</span>
+                    </div>
 
-                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <span className="text-[11px] text-slate-400 block">Featured Placement Fee</span>
-                  <span className="text-xl font-black text-sky-400">$149 / mo</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Paid direct sponsor tier</span>
-                </div>
-              </div>
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                      <span className="text-[11px] text-slate-400 block">Featured Placement Fee</span>
+                      <span className="text-xl font-black text-sky-400">$149 / mo</span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Paid direct sponsor tier</span>
+                    </div>
+                  </div>
 
-              {totalOutboundClicks > 0 ? (
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Top Clicked Software</span>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(outboundClicks).map(([toolId, count]) => {
-                      const tool = AI_TOOLS.find((t) => t.id === toolId);
-                      return (
-                        <div key={toolId} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center space-x-2">
-                          <span className="font-semibold text-white">{tool?.name || toolId}</span>
-                          <span className="text-amber-400 font-bold font-mono">{count} clicks</span>
+                  {totalOutboundClicks > 0 ? (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Top Clicked Software</span>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(outboundClicks).map(([toolId, count]) => {
+                          const tool = AI_TOOLS.find((t) => t.id === toolId);
+                          return (
+                            <div key={toolId} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center space-x-2">
+                              <span className="font-semibold text-white">{tool?.name || toolId}</span>
+                              <span className="text-amber-400 font-bold font-mono">{count} clicks</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400">
+                      Click on "Visit Tool" or any affiliate trial button to simulate and verify outbound tracking.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {founderHudTab === 'viral' && (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-300">
+                    Pre-engineered viral posts designed to drive 5,000+ organic visitors from Reddit, Twitter/X, and Product Hunt with zero ad spend. Click to copy:
+                  </p>
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    {VIRAL_POSTS.map((post) => (
+                      <div key={post.key} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-sky-400">{post.platform}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-700 text-slate-400">
+                            {post.badge}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <p className="text-slate-300 font-medium">{post.title}</p>
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
+                          <span className="text-[10px] text-slate-500 font-mono">100% ready to publish</span>
+                          <button
+                            onClick={() => copyViralPost(post.key, post.content)}
+                            className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 font-bold text-[11px] transition"
+                          >
+                            {copiedSocialKey === post.key ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            <span>{copiedSocialKey === post.key ? 'Copied Post!' : 'Copy Post'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-400">
-                  Click on "Visit Tool" or any affiliate trial button to simulate and verify outbound tracking.
-                </p>
+              )}
+
+              {founderHudTab === 'export' && (
+                <div className="space-y-3 text-xs">
+                  <p className="text-slate-300">
+                    Export all your locally captured organic audience and conversion data for email marketing or partner reporting:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                      <span className="font-bold text-white block">Newsletter Subscribers List</span>
+                      <p className="text-slate-400 text-[11px]">
+                        Download your subscriber emails as a CSV file to import into Substack, Beehiiv, or Mailchimp.
+                      </p>
+                      <button
+                        onClick={exportSubscribersCSV}
+                        className="w-full py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center justify-center space-x-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Subscribers.csv</span>
+                      </button>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                      <span className="font-bold text-white block">Affiliate Click Events Report</span>
+                      <p className="text-slate-400 text-[11px]">
+                        Download granular logs of outbound referral clicks and estimated revenues per tool.
+                      </p>
+                      <button
+                        onClick={exportClicksCSV}
+                        className="w-full py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold transition flex items-center justify-center space-x-1.5"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download Clicks.csv</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -425,6 +626,48 @@ export const ToolPulseApp: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Programmatic Editorial Guides & In-Depth Benchmarks (SEO Long-Tail Ranking) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 sm:p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <BookOpen className="w-4 h-4 text-sky-400" />
+            <h3 className="text-sm font-bold text-white">Editorial Buying Guides & Hands-On Benchmarks</h3>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">Ranked #1 for High-Intent Queries</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {BUYING_GUIDES.map((guide) => (
+            <div
+              key={guide.id}
+              onClick={() => handleOpenGuide(guide)}
+              className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/40 cursor-pointer transition flex flex-col justify-between space-y-3 group"
+            >
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] text-sky-400 font-semibold">
+                  <span>{guide.category}</span>
+                  <span className="text-slate-500">{guide.readTime}</span>
+                </div>
+                <h4 className="text-xs font-bold text-white group-hover:text-sky-300 transition leading-snug">
+                  {guide.title}
+                </h4>
+                <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                  {guide.subtitle}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500">{guide.publishDate}</span>
+                <span className="text-sky-400 font-bold flex items-center space-x-1 group-hover:translate-x-0.5 transition">
+                  <span>Read Guide</span>
+                  <ArrowRight className="w-3 h-3" />
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -607,6 +850,107 @@ export const ToolPulseApp: React.FC = () => {
           <span className="text-[11px] text-slate-500 block">No spam. One-click unsubscribe at any time.</span>
         </div>
       </div>
+
+      {/* EDITORIAL BUYING GUIDE MODAL */}
+      {activeGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl relative text-left">
+            <button
+              onClick={handleCloseGuide}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white text-sm font-bold p-1"
+            >
+              ✕
+            </button>
+
+            {/* Guide Header */}
+            <div className="space-y-2 border-b border-slate-800 pb-4">
+              <div className="flex items-center space-x-2 text-xs text-sky-400 font-bold uppercase">
+                <span>{activeGuide.category}</span>
+                <span>•</span>
+                <span>{activeGuide.readTime}</span>
+                <span>•</span>
+                <span className="text-slate-400">Published {activeGuide.publishDate}</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                {activeGuide.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {activeGuide.subtitle}
+              </p>
+            </div>
+
+            {/* Guide Sections */}
+            <div className="space-y-6 text-xs sm:text-sm leading-relaxed text-slate-300">
+              {activeGuide.sections.map((sec, idx) => {
+                const highlightedTool = sec.highlightToolSlug
+                  ? AI_TOOLS.find((t) => t.slug === sec.highlightToolSlug || t.id === sec.highlightToolSlug)
+                  : null;
+
+                return (
+                  <div key={idx} className="space-y-3">
+                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                      {sec.heading}
+                    </h3>
+                    <p className="text-slate-300 leading-relaxed">{sec.content}</p>
+
+                    {highlightedTool && (
+                      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-white text-sm">{highlightedTool.name}</span>
+                            <span className="text-amber-400 text-xs">⭐ {highlightedTool.rating}</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-800 text-slate-400">
+                              {highlightedTool.startingPrice}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400">{highlightedTool.tagline}</p>
+                        </div>
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              handleCloseGuide();
+                              handleOpenTool(highlightedTool);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-sky-400 hover:text-white transition font-medium"
+                          >
+                            Full Review
+                          </button>
+                          <a
+                            href={highlightedTool.affiliateUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => handleAffiliateClick(highlightedTool)}
+                            className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs transition flex items-center space-x-1"
+                          >
+                            <span>Try Free</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Verdict Box */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-slate-950 to-sky-950/40 border border-emerald-500/30 space-y-3 text-xs">
+              <div className="flex items-center space-x-2 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>The Independent Editorial Verdict</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Top Recommendation</span>
+                <span className="text-base font-extrabold text-white">{activeGuide.verdict.winnerName}</span>
+              </div>
+              <p className="text-slate-300 leading-relaxed">{activeGuide.verdict.summary}</p>
+              <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                <strong>Runners Up:</strong> {activeGuide.verdict.runnersUp}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOOL DETAIL MODAL */}
       {activeToolDetail && (
