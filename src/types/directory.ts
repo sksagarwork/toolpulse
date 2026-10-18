@@ -8,7 +8,11 @@ export type ToolCategory =
   | 'Productivity'
   | 'Voice & Audio'
   | 'Sales & Outreach'
-  | 'Research & Search';
+  | 'Research & Search'
+  | 'Design & 3D'
+  | 'Music & Sound'
+  | 'Automation & Agents'
+  | 'Presentations & Slides';
 
 export interface AITool {
   id: string;
