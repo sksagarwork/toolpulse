@@ -1,0 +1,227 @@
+{
+  "lead-1": {
+    "toolName": "Klap.app",
+    "founderName": "Alexandre",
+    "contactEmail": "alex@klap.app",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featured placement for Klap on ToolPulse AI (50k+ monthly creators)",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-2": {
+    "toolName": "Cursorless / Aider",
+    "founderName": "Paul",
+    "contactEmail": "paul@aider.chat",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featuring Aider alongside Cursor on ToolPulse (Dev audience)",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-3": {
+    "toolName": "Taplio",
+    "founderName": "Tom",
+    "contactEmail": "tom@taplio.com",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse feature placement: Taplio for LinkedIn B2B Founders",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-4": {
+    "toolName": "AudioPen",
+    "founderName": "Louis",
+    "contactEmail": "louis@audiopen.ai",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Adding AudioPen to ToolPulse Voice & Productivity Directory",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-5": {
+    "toolName": "Bolt.new by StackBlitz",
+    "founderName": "Eric",
+    "contactEmail": "eric@stackblitz.com",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featuring Bolt.new in ToolPulse AI Developer Directory",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-6": {
+    "toolName": "Lovable.dev",
+    "founderName": "Anton Osika",
+    "contactEmail": "anton@lovable.dev",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featuring Lovable.dev as #1 Fullstack Builder on ToolPulse",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-7": {
+    "toolName": "Gamma.app",
+    "founderName": "Grant Lee",
+    "contactEmail": "grant@gamma.app",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Spotlight: Gamma vs Beautiful.ai vs Tome comparison feature",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-8": {
+    "toolName": "Jenni.ai",
+    "founderName": "David Park",
+    "contactEmail": "david@jenni.ai",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featuring Jenni.ai on ToolPulse Academic & Copywriting Directory",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-9": {
+    "toolName": "Fireflies.ai",
+    "founderName": "Krish Ramineni",
+    "contactEmail": "krish@fireflies.ai",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse B2B Audit recommendations: Fireflies.ai integration",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-10": {
+    "toolName": "ElevenLabs",
+    "founderName": "Mati Staniszewski",
+    "contactEmail": "mati@elevenlabs.io",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Voice Directory: ElevenLabs Official Benchmark Ranking",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-11": {
+    "toolName": "Descript",
+    "founderName": "Andrew Mason",
+    "contactEmail": "andrew@descript.com",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "Featuring Descript in ToolPulse Creator Buying Guides",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-12": {
+    "toolName": "HeyGen",
+    "founderName": "Joshua Xu",
+    "contactEmail": "joshua@heygen.com",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Spotlight: HeyGen #1 AI Avatar Platform",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-13": {
+    "toolName": "Make.com",
+    "founderName": "Ondrej Gazda",
+    "contactEmail": "ondrej@make.com",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Automation Directory: Make.com vs Zapier guide feature",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-14": {
+    "toolName": "Perplexity AI",
+    "founderName": "Aravind Srinivas",
+    "contactEmail": "aravind@perplexity.ai",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Verified Profile: Perplexity Pro Benchmark Ranking",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  },
+  "lead-15": {
+    "toolName": "Instantly.ai",
+    "founderName": "Nils",
+    "contactEmail": "nils@instantly.ai",
+    "status": "QUEUED_READY",
+    "queuedAt": "2026-10-18T16:41:50.577Z",
+    "targetSponsorship": "$149/mo",
+    "pitchSubject": "ToolPulse Lead-Gen Feature: Instantly #1 Outbound Recommendation",
+    "history": [
+      {
+        "action": "ENQUEUED",
+        "timestamp": "2026-10-18T16:41:50.577Z"
+      }
+    ]
+  }
+}
