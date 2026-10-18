@@ -21,8 +21,15 @@ import {
   BookOpen,
   Download,
   Share2,
+  Tag,
+  Users,
+  Send,
+  Award,
 } from 'lucide-react';
 import { BUYING_GUIDES, BuyingGuide } from '../../data/buyingGuides';
+import { AI_DEALS, AIDeal } from '../../data/aiDealsData';
+import { OUTREACH_LEADS, OutreachLead } from '../../data/outreachLeads';
+import { AIStackQuizModal } from './AIStackQuizModal';
 
 const POPULAR_SHOWDOWNS = [
   { slugA: 'cursor', slugB: 'windsurf', label: 'Cursor vs Windsurf' },
@@ -66,6 +73,7 @@ export const ToolPulseApp: React.FC = () => {
   // Modals state
   const [activeToolDetail, setActiveToolDetail] = useState<AITool | null>(null);
   const [activeGuide, setActiveGuide] = useState<BuyingGuide | null>(null);
+  const [showQuizModal, setShowQuizModal] = useState(false);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareToolA, setCompareToolA] = useState<AITool>(AI_TOOLS[0]);
   const [compareToolB, setCompareToolB] = useState<AITool>(AI_TOOLS[1]);
@@ -75,8 +83,12 @@ export const ToolPulseApp: React.FC = () => {
 
   // Founder HUD & Outbound Click Tracking (Monetization Engine)
   const [showFounderHud, setShowFounderHud] = useState(false);
-  const [founderHudTab, setFounderHudTab] = useState<'stats' | 'viral' | 'export'>('stats');
+  const [founderHudTab, setFounderHudTab] = useState<'stats' | 'viral' | 'outreach' | 'leads' | 'export'>('stats');
   const [copiedSocialKey, setCopiedSocialKey] = useState<string | null>(null);
+  const [copiedPitchId, setCopiedPitchId] = useState<string | null>(null);
+  const [copiedCouponId, setCopiedCouponId] = useState<string | null>(null);
+  const [copiedBadgeCode, setCopiedBadgeCode] = useState(false);
+  const [revealedDeals, setRevealedDeals] = useState<{ [dealId: string]: boolean }>({});
   const [outboundClicks, setOutboundClicks] = useState<{ [toolId: string]: number }>(() => {
     try {
       const saved = localStorage.getItem('toolpulse_clicks');
@@ -245,6 +257,81 @@ export const ToolPulseApp: React.FC = () => {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const exportQuizLeadsCSV = () => {
+    try {
+      const leads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+      if (leads.length === 0) {
+        alert('No quiz leads captured yet! Launch the AI Stack Recommender quiz to capture your first lead.');
+        return;
+      }
+      const csvContent = 'data:text/csv;charset=utf-8,Email,Role,Bottleneck,Budget,RecommendedTools,Date\n' +
+        leads.map((l: any) => `"${l.email}","${l.role}","${l.bottleneck}","${l.budget}","${(l.recommendedTools || []).join('; ')}","${l.date}"`).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `toolpulse_quiz_leads_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const exportMasterLeadCSV = () => {
+    try {
+      const subscribers = JSON.parse(localStorage.getItem('toolpulse_subscribers') || '[]');
+      const quizLeads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+
+      const allRows: string[] = ['Email,Source,Role,Bottleneck,Budget,Date'];
+      subscribers.forEach((s: any) => {
+        allRows.push(`"${s.email}","Weekly Newsletter Deals","General Subscriber","General","Unknown","${s.date}"`);
+      });
+      quizLeads.forEach((q: any) => {
+        allRows.push(`"${q.email}","AI Stack Recommender Quiz","${q.role}","${q.bottleneck}","${q.budget}","${q.date}"`);
+      });
+
+      if (allRows.length === 1) {
+        alert('No leads captured yet! Test the quiz or newsletter box to capture leads.');
+        return;
+      }
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + allRows.join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `toolpulse_master_leads_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const copyFounderPitch = (lead: OutreachLead) => {
+    navigator.clipboard.writeText(`Subject: ${lead.customPitchSubject}\n\n${lead.customPitchBody}`);
+    setCopiedPitchId(lead.id);
+    setTimeout(() => setCopiedPitchId(null), 2500);
+  };
+
+  const copyCoupon = (deal: AIDeal) => {
+    navigator.clipboard.writeText(deal.couponCode);
+    setCopiedCouponId(deal.id);
+    setTimeout(() => setCopiedCouponId(null), 2500);
+  };
+
+  const toggleRevealDeal = (dealId: string) => {
+    setRevealedDeals((prev) => ({ ...prev, [dealId]: true }));
+  };
+
+  const copyEmbedBadge = () => {
+    const code = `<a href="https://toolpulse.ai" target="_blank" rel="noopener"><img src="https://toolpulse.ai/badges/featured-on-toolpulse.svg" alt="Featured on ToolPulse AI Directory" width="220" height="54" /></a>`;
+    navigator.clipboard.writeText(code);
+    setCopiedBadgeCode(true);
+    setTimeout(() => setCopiedBadgeCode(false), 2500);
   };
 
   const handleOpenTool = (tool: AITool) => {
@@ -420,6 +507,14 @@ export const ToolPulseApp: React.FC = () => {
           {/* Quick Header Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs">
             <button
+              onClick={() => setShowQuizModal(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black hover:opacity-95 transition shadow-lg shadow-emerald-500/25"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+              <span>AI Stack Quiz (Get Matched)</span>
+            </button>
+
+            <button
               onClick={() => setShowCompareModal(true)}
               className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 transition"
             >
@@ -460,7 +555,7 @@ export const ToolPulseApp: React.FC = () => {
                   <DollarSign className="w-5 h-5 text-amber-400" />
                   <span className="text-sm font-bold text-white">Founder Growth & Monetization Engine</span>
                 </div>
-                <div className="flex space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+                <div className="flex flex-wrap gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
                   <button
                     onClick={() => setFounderHudTab('stats')}
                     className={`px-3 py-1 rounded-lg font-semibold transition ${
@@ -470,13 +565,31 @@ export const ToolPulseApp: React.FC = () => {
                     Live Revenue
                   </button>
                   <button
+                    onClick={() => setFounderHudTab('leads')}
+                    className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1 ${
+                      founderHudTab === 'leads' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Users className="w-3 h-3" />
+                    <span>Quiz Leads</span>
+                  </button>
+                  <button
+                    onClick={() => setFounderHudTab('outreach')}
+                    className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1 ${
+                      founderHudTab === 'outreach' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>$149 Pitcher</span>
+                  </button>
+                  <button
                     onClick={() => setFounderHudTab('viral')}
                     className={`px-3 py-1 rounded-lg font-semibold transition flex items-center space-x-1 ${
                       founderHudTab === 'viral' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     <Share2 className="w-3 h-3" />
-                    <span>Viral Launchpad</span>
+                    <span>Viral Posts</span>
                   </button>
                   <button
                     onClick={() => setFounderHudTab('export')}
@@ -485,7 +598,7 @@ export const ToolPulseApp: React.FC = () => {
                     }`}
                   >
                     <Download className="w-3 h-3" />
-                    <span>Export Leads</span>
+                    <span>Export</span>
                   </button>
                 </div>
               </div>
@@ -538,6 +651,122 @@ export const ToolPulseApp: React.FC = () => {
                 </div>
               )}
 
+              {founderHudTab === 'leads' && (
+                <div className="space-y-3 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-white block">Captured High-Intent Quiz Leads</span>
+                      <p className="text-slate-400 text-[11px]">
+                        Users who completed the AI Stack Recommender quiz seeking custom toolkits.
+                      </p>
+                    </div>
+                    <button
+                      onClick={exportQuizLeadsCSV}
+                      className="px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center space-x-1 shrink-0"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Leads CSV</span>
+                    </button>
+                  </div>
+
+                  {(() => {
+                    let leads: any[] = [];
+                    try {
+                      leads = JSON.parse(localStorage.getItem('toolpulse_quiz_leads') || '[]');
+                    } catch {}
+                    if (leads.length === 0) {
+                      return (
+                        <div className="p-6 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-2">
+                          <Users className="w-6 h-6 text-slate-500 mx-auto" />
+                          <p className="text-slate-300 font-semibold">No quiz leads captured yet.</p>
+                          <p className="text-slate-500 text-[11px]">
+                            Click "AI Stack Quiz (Get Matched)" in the hero header to test lead capture.
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {leads.map((l, idx) => (
+                          <div key={idx} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-white text-xs">{l.email}</span>
+                              <span className="text-[10px] text-slate-500">{new Date(l.date).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 text-[10px]">
+                              <span className="px-2 py-0.5 rounded bg-sky-950/60 text-sky-300 border border-sky-800">{l.role}</span>
+                              <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-800">{l.bottleneck}</span>
+                              <span className="px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800">{l.budget}</span>
+                            </div>
+                            {l.recommendedTools && (
+                              <span className="text-[10px] text-slate-400 block">
+                                Recommended: {l.recommendedTools.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {founderHudTab === 'outreach' && (
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="font-bold text-white block">Sponsor Prospecting & $149 Placement Pitcher</span>
+                    <p className="text-slate-400 text-[11px]">
+                      High-growth AI startups seeking organic distribution. 1-click personalized email pitches to sell $149/mo featured spotlights:
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    {OUTREACH_LEADS.map((lead) => (
+                      <div key={lead.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <div>
+                            <span className="font-bold text-white text-sm">{lead.toolName}</span>
+                            <span className="text-slate-400 text-xs ml-2">({lead.founderName}, {lead.founderRole})</span>
+                          </div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950 border border-emerald-800 text-emerald-300 font-mono">
+                              {lead.monthlyRevenueEstimate}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-700 text-slate-400">
+                              {lead.category}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400">
+                          <strong>Angle:</strong> {lead.pitchAngle}
+                        </p>
+
+                        <div className="pt-2 border-t border-slate-900 flex items-center justify-between">
+                          <span className="text-[11px] text-sky-400 font-mono">{lead.contactEmail}</span>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => copyFounderPitch(lead)}
+                              className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-bold transition flex items-center space-x-1"
+                            >
+                              {copiedPitchId === lead.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedPitchId === lead.id ? 'Copied Pitch!' : 'Copy Script'}</span>
+                            </button>
+                            <a
+                              href={`mailto:${lead.contactEmail}?subject=${encodeURIComponent(lead.customPitchSubject)}&body=${encodeURIComponent(lead.customPitchBody)}`}
+                              className="px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 text-[11px] font-extrabold transition flex items-center space-x-1"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>Open Mail</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {founderHudTab === 'viral' && (
                 <div className="space-y-3">
                   <p className="text-xs text-slate-300">
@@ -570,37 +799,73 @@ export const ToolPulseApp: React.FC = () => {
               )}
 
               {founderHudTab === 'export' && (
-                <div className="space-y-3 text-xs">
-                  <p className="text-slate-300">
-                    Export all your locally captured organic audience and conversion data for email marketing or partner reporting:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                      <span className="font-bold text-white block">Newsletter Subscribers List</span>
+                <div className="space-y-4 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="font-bold text-white block">Audience Data & Backlink Engine</span>
                       <p className="text-slate-400 text-[11px]">
-                        Download your subscriber emails as a CSV file to import into Substack, Beehiiv, or Mailchimp.
+                        Export leads for email campaigns or distribute badges to startups for automated backlinks.
+                      </p>
+                    </div>
+                    <button
+                      onClick={exportMasterLeadCSV}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-slate-950 font-black text-xs transition flex items-center space-x-1.5 shadow-md shadow-sky-500/20"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download Master Leads CSV</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <span className="font-bold text-white block">Newsletter Subscribers</span>
+                      <p className="text-slate-400 text-[11px]">
+                        Captured weekly deal subscribers ready for Substack/Beehiiv.
                       </p>
                       <button
                         onClick={exportSubscribersCSV}
-                        className="w-full py-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center justify-center space-x-1.5"
+                        className="w-full py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold transition flex items-center justify-center space-x-1.5 text-xs"
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download Subscribers.csv</span>
+                        <Download className="w-3 h-3" />
+                        <span>Subscribers.csv</span>
                       </button>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                      <span className="font-bold text-white block">Affiliate Click Events Report</span>
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <span className="font-bold text-white block">Affiliate Click Logs</span>
                       <p className="text-slate-400 text-[11px]">
-                        Download granular logs of outbound referral clicks and estimated revenues per tool.
+                        Logs of every outbound referral click for partner reporting.
                       </p>
                       <button
                         onClick={exportClicksCSV}
-                        className="w-full py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold transition flex items-center justify-center space-x-1.5"
+                        className="w-full py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold transition flex items-center justify-center space-x-1.5 text-xs"
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Download Clicks.csv</span>
+                        <Download className="w-3 h-3" />
+                        <span>Clicks.csv</span>
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Organic Backlink Embed Badge Generator */}
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-1.5 text-sky-400 font-bold">
+                        <Award className="w-4 h-4" />
+                        <span>"Featured on ToolPulse" Embed Badge</span>
+                      </div>
+                      <button
+                        onClick={copyEmbedBadge}
+                        className="px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold text-[11px] transition flex items-center space-x-1"
+                      >
+                        {copiedBadgeCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedBadgeCode ? 'Copied HTML!' : 'Copy Embed Snippet'}</span>
+                      </button>
+                    </div>
+                    <p className="text-slate-400 text-[11px]">
+                      Share this snippet with indexed AI startups to paste into their footer or docs. Every embed creates an organic dofollow backlink to ToolPulse!
+                    </p>
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300 overflow-x-auto">
+                      &lt;a href="https://toolpulse.ai" target="_blank"&gt;&lt;img src="https://toolpulse.ai/badges/featured.svg" alt="Featured on ToolPulse" /&gt;&lt;/a&gt;
                     </div>
                   </div>
                 </div>
@@ -808,6 +1073,79 @@ export const ToolPulseApp: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Exclusive AI Partner Deals & Promo Codes Vault */}
+      <div className="rounded-3xl border border-amber-500/30 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/20 p-5 sm:p-8 space-y-4 shadow-xl text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div className="flex items-center space-x-2">
+            <Tag className="w-5 h-5 text-amber-400" />
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-white">Exclusive AI Partner Deals & Secret Promo Codes</h3>
+              <p className="text-xs text-slate-400">Verified discounts negotiated exclusively for ToolPulse visitors.</p>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 w-fit">
+            Over $200+ in Total Savings
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {AI_DEALS.map((deal) => {
+            const isRevealed = revealedDeals[deal.id];
+            return (
+              <div
+                key={deal.id}
+                className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 transition flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-xs">{deal.toolName}</span>
+                    <span className="text-[10px] text-emerald-400 font-bold font-mono">Saves {deal.verifiedSavings}</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-black bg-amber-500/15 text-amber-300 border border-amber-500/30 block w-fit">
+                    {deal.discountBadge}
+                  </span>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">{deal.dealDescription}</p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-900 space-y-2">
+                  {isRevealed ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-amber-300 font-mono font-bold text-xs flex-1 text-center select-all">
+                        {deal.couponCode}
+                      </div>
+                      <button
+                        onClick={() => copyCoupon(deal)}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs transition flex items-center space-x-1 shrink-0"
+                      >
+                        {copiedCouponId === deal.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedCouponId === deal.id ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => toggleRevealDeal(deal.id)}
+                      className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold text-xs transition flex items-center justify-center space-x-1"
+                    >
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>Reveal Secret Promo Code</span>
+                    </button>
+                  )}
+
+                  <a
+                    href={deal.affiliateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 font-bold text-[11px] transition text-center block"
+                  >
+                    Claim at Official Vendor Site →
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Organic Newsletter & Lifetime Deal Capture Box */}
@@ -1364,6 +1702,14 @@ export const ToolPulseApp: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI STACK RECOMMENDER QUIZ MODAL */}
+      {showQuizModal && (
+        <AIStackQuizModal
+          onClose={() => setShowQuizModal(false)}
+          onSelectTool={(tool) => handleOpenTool(tool)}
+        />
       )}
     </div>
   );
