@@ -12,6 +12,7 @@ import {
   Moon,
   Rocket,
   Globe,
+  Hammer,
 } from 'lucide-react';
 import { CurrencyCode } from '../types/finance';
 
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
 
   const navItems = [
     { id: 'overview', label: 'Command Center', icon: Compass },
+    { id: 'tradesos', label: 'TradesOS (Billionaire Trades) 🏗️', icon: Hammer },
     { id: 'toolpulse', label: 'ToolPulse AI Site 🌐', icon: Globe },
     { id: 'organic', label: 'Organic Flywheel 🚀', icon: Rocket },
     { id: 'passive', label: 'Earn While Sleeping 🌙', icon: Moon },

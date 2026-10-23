@@ -10,10 +10,11 @@ import { ActionRoadmapTab } from './components/Roadmap/ActionRoadmapTab';
 import { EarnWhileYouSleepTab } from './components/Passive/EarnWhileYouSleepTab';
 import { OrganicGrowthTab } from './components/Organic/OrganicGrowthTab';
 import { ToolPulseApp } from './components/Directory/ToolPulseApp';
+import { TradesOSApp } from './components/TradesOS/TradesOSApp';
 import { ShieldCheck } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeTab, setActiveTab] = useState<string>('tradesos');
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
@@ -25,6 +26,7 @@ const AppContent: React.FC = () => {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
+        {activeTab === 'tradesos' && <TradesOSApp />}
         {activeTab === 'overview' && <OverviewTab onNavigateTab={setActiveTab} />}
         {activeTab === 'toolpulse' && <ToolPulseApp />}
         {activeTab === 'organic' && <OrganicGrowthTab />}
