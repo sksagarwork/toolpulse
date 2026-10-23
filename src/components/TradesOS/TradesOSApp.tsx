@@ -14,7 +14,13 @@ import {
   Filter,
   Receipt,
   Download,
-  Share2
+  Share2,
+  Copy,
+  Printer,
+  QrCode,
+  MapPin,
+  Search,
+  Sparkles
 } from "lucide-react";
 import {
   TRADE_CATEGORIES,
@@ -23,6 +29,10 @@ import {
   INITIAL_FLEET,
   INITIAL_BOOKINGS
 } from "../../data/tradesData";
+import {
+  INDIAN_CITY_HUBS,
+  RWA_VIRAL_SCRIPTS
+} from "../../data/organicGrowthData";
 import {
   TradeCategory,
   JobBooking,
@@ -34,8 +44,8 @@ import {
 } from "../../types/trades";
 
 export const TradesOSApp: React.FC = () => {
-  // Navigation Modes: "consumer" | "contractor" | "fleet" | "invoice" | "billionaire"
-  const [activeMode, setActiveMode] = useState<"consumer" | "contractor" | "fleet" | "invoice" | "billionaire">("consumer");
+  // Navigation Modes: "consumer" | "contractor" | "fleet" | "invoice" | "billionaire" | "growth"
+  const [activeMode, setActiveMode] = useState<"consumer" | "contractor" | "fleet" | "invoice" | "billionaire" | "growth">("consumer");
 
   // State
   const [bookings, setBookings] = useState<JobBooking[]>(() => {
@@ -91,6 +101,12 @@ export const TradesOSApp: React.FC = () => {
   const [subFleet, setSubFleet] = useState(45); // 45 logistics fleets @ 7999/mo
   const [monthlyGmv, setMonthlyGmv] = useState(3500000); // 35 Lakh booking GMV (10% take-rate)
 
+  // Organic Growth State
+  const [selectedCityHub, setSelectedCityHub] = useState<string>("mumbai");
+  const [copiedScriptId, setCopiedScriptId] = useState<string | null>(null);
+  const [flyerShopName, setFlyerShopName] = useState("A-1 Hardware & Sanitary Store");
+  const [flyerPhone, setFlyerPhone] = useState("+91 98201 44521");
+
   // Handlers
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +157,12 @@ export const TradesOSApp: React.FC = () => {
     );
   };
 
+  const handleCopyScript = (scriptId: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedScriptId(scriptId);
+    setTimeout(() => setCopiedScriptId(null), 2500);
+  };
+
   // Filtered Services
   const filteredServices =
     selectedCategory === "all"
@@ -166,6 +188,19 @@ export const TradesOSApp: React.FC = () => {
   const invGst = Math.round((invSubtotal - invDiscount) * 0.18);
   const invTotal = invSubtotal - invDiscount + invGst;
 
+  // Viral WhatsApp message template
+  const viralInvoiceText = `*TAX INVOICE / CASH MEMO*
+From: *${invBusinessName}*
+Customer: ${invCustomerName} (${invCustomerPhone})
+Bill No: INV-2026-0842 | Date: Today
+--------------------------------------
+Total Amount Payable: *₹${invTotal}*
+Payment Mode: UPI / Cash on site
+--------------------------------------
+⚡ *Sent via TradesOS* - Free WhatsApp Billing & Job Dispatch for Indian Plumbers, Electricians, AC & Tempo Operators.
+Create free branded bills for your shop:
+👉 https://sksagarwork.github.io/toolpulse/`;
+
   // Billionaire Economics
   const mrrSubscriptions =
     subStarter * 999 + subPro * 2999 + subFleet * 7999;
@@ -173,6 +208,9 @@ export const TradesOSApp: React.FC = () => {
   const totalMonthlyRevenue = mrrSubscriptions + mrrCommission;
   const annualARR = totalMonthlyRevenue * 12;
   const valuation10x = annualARR * 10;
+
+  // Selected City Hub Data
+  const currentCityHub = INDIAN_CITY_HUBS.find((c) => c.id === selectedCityHub) || INDIAN_CITY_HUBS[0];
 
   return (
     <div className="space-y-8 animate-fadeIn text-slate-100">
@@ -222,26 +260,26 @@ export const TradesOSApp: React.FC = () => {
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-900/90 rounded-xl border border-slate-800">
         <button
           onClick={() => setActiveMode("consumer")}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
             activeMode === "consumer"
               ? "bg-blue-600 text-white shadow-lg shadow-blue-500/25"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
           <Wrench className="w-4 h-4 text-amber-400" />
-          <span>1. Consumer Booking Portal (Urban Company)</span>
+          <span>1. Consumer Booking Portal</span>
         </button>
 
         <button
           onClick={() => setActiveMode("contractor")}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
             activeMode === "contractor"
               ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
           <Hammer className="w-4 h-4 text-emerald-300" />
-          <span>2. Contractor Field Dispatch (ServiceTitan)</span>
+          <span>2. Contractor Field Dispatch</span>
           <span className="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/50">
             {bookings.length}
           </span>
@@ -249,38 +287,50 @@ export const TradesOSApp: React.FC = () => {
 
         <button
           onClick={() => setActiveMode("fleet")}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
             activeMode === "fleet"
               ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
           <Truck className="w-4 h-4 text-indigo-300" />
-          <span>3. Intracity Freight & Fleet (Porter)</span>
+          <span>3. Freight & Fleet</span>
         </button>
 
         <button
           onClick={() => setActiveMode("invoice")}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
             activeMode === "invoice"
               ? "bg-teal-600 text-white shadow-lg shadow-teal-500/25"
               : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
           }`}
         >
           <Receipt className="w-4 h-4 text-teal-300" />
-          <span>4. WhatsApp GST Invoice Maker</span>
+          <span>4. WhatsApp GST Invoice</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMode("growth")}
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+            activeMode === "growth"
+              ? "bg-purple-600 text-white shadow-lg shadow-purple-500/25"
+              : "text-purple-300 hover:text-white hover:bg-slate-800/60"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-yellow-300" />
+          <span>5. Organic Viral Engine 🚀</span>
         </button>
 
         <button
           onClick={() => setActiveMode("billionaire")}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+          className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
             activeMode === "billionaire"
               ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/25"
               : "text-amber-400 hover:text-amber-300 hover:bg-slate-800/60"
           }`}
         >
           <TrendingUp className="w-4 h-4 text-yellow-300" />
-          <span>5. 100 Crore ARR Roadmap</span>
+          <span>6. 100 Crore ARR Roadmap 💎</span>
         </button>
       </div>
 
@@ -856,7 +906,7 @@ export const TradesOSApp: React.FC = () => {
         </div>
       )}
 
-      {/* MODE 4: INSTANT WHATSAPP GST INVOICE MAKER */}
+      {/* MODE 4: INSTANT WHATSAPP GST INVOICE MAKER WITH VIRAL LOOP */}
       {activeMode === "invoice" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Invoice Form Controls */}
@@ -867,7 +917,7 @@ export const TradesOSApp: React.FC = () => {
                 <span>Instant Digital Invoice Builder</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Generate professional bills on the job site and dispatch directly to customer WhatsApp.
+                Generate professional bills on the job site and dispatch directly to customer WhatsApp with the viral TradesOS referral loop.
               </p>
             </div>
 
@@ -1031,21 +1081,27 @@ export const TradesOSApp: React.FC = () => {
               </div>
             </div>
 
+            {/* Viral Growth Footer Note */}
+            <div className="bg-slate-900/80 p-2.5 rounded-lg border border-purple-500/30 text-[11px] text-slate-300 space-y-1">
+              <div className="flex items-center space-x-1.5 text-purple-400 font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Built-in Viral Acquisition Loop:</span>
+              </div>
+              <p className="text-slate-400">
+                This bill attaches a free referral badge. Every customer and trade partner who views this invoice sees your link to join TradesOS.
+              </p>
+            </div>
+
             {/* Actions: Send WhatsApp Bill */}
             <div className="pt-2 flex items-center space-x-3">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(
-                  `*Invoice from ${invBusinessName}*
-Customer: ${invCustomerName}
-Total Amount: ₹${invTotal}
-Thank you for choosing TradesOS verified services!`
-                )}`}
+                href={`https://wa.me/?text=${encodeURIComponent(viralInvoiceText)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2"
               >
                 <Share2 className="w-4 h-4" />
-                <span>Send Bill to Customer WhatsApp</span>
+                <span>Send WhatsApp Bill With Viral Link</span>
               </a>
 
               <button
@@ -1060,7 +1116,348 @@ Thank you for choosing TradesOS verified services!`
         </div>
       )}
 
-      {/* MODE 5: BILLIONAIRE ARR & VALUATION ROADMAP */}
+      {/* MODE 5: ORGANIC VIRAL ENGINE */}
+      {activeMode === "growth" && (
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-950/60 via-slate-900 to-blue-950/60 border border-purple-500/30 rounded-2xl p-6 sm:p-8 space-y-3">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-bold uppercase tracking-wider">
+              <span>🚀 Zero-Ad Budget Organic Growth Engine</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-300">100% Free Traffic</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+              How TradesOS Grows Without Spending a Single Rupee on Ads
+            </h2>
+            <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
+              We leverage 3 compounding organic loops: <strong className="text-white">Programmatic City SEO</strong> (capturing high-intent Google searches), <strong className="text-white">The Viral WhatsApp Invoicing Loop</strong> (every contractor advertises the platform to homeowners), and <strong className="text-white">In-Store QR Counter Flyers</strong> (placed in local hardware & electrical shops).
+            </p>
+          </div>
+
+          {/* 3 Pillars Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-2 hover:border-purple-500/40 transition">
+              <div className="w-9 h-9 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <Search className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">1. Programmatic Local SEO</h3>
+              <p className="text-xs text-slate-400">
+                Targeting 600,000+ monthly Google searches for "emergency plumber near me", "AC repair in [city]", and "chhota hathi tempo booking".
+              </p>
+            </div>
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-2 hover:border-purple-500/40 transition">
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <Share2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">2. Viral Invoice Loop</h3>
+              <p className="text-xs text-slate-400">
+                Every bill sent via WhatsApp features a "Powered by TradesOS" link. When a customer or nearby tradesman sees the professional bill, they sign up.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-2 hover:border-purple-500/40 transition">
+              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">3. Hardware Store QR Cards</h3>
+              <p className="text-xs text-slate-400">
+                Counter flyers given free to local electrical & sanitary shops. Customers scan the QR code at the checkout counter to book services.
+              </p>
+            </div>
+          </div>
+
+          {/* Section 1: Programmatic Local City Hub Explorer */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                  <MapPin className="w-5 h-5 text-purple-400" />
+                  <span>Programmatic City SEO Directory</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Select a city to inspect local search volume, high-converting suburban keywords, and Google schema.
+                </p>
+              </div>
+
+              {/* City Selector */}
+              <div className="flex items-center space-x-2">
+                <select
+                  value={selectedCityHub}
+                  onChange={(e) => setSelectedCityHub(e.target.value)}
+                  className="bg-slate-950 border border-purple-500/40 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                >
+                  {INDIAN_CITY_HUBS.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.cityName} ({city.state})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* City Hub Telemetry Card */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400">Metro Market</span>
+                    <h4 className="text-xl font-bold text-white">{currentCityHub.cityName}</h4>
+                    <span className="text-xs text-slate-400">{currentCityHub.state}</span>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                    {currentCityHub.activeContractorsCount} Active Pros
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between py-1 border-b border-slate-800">
+                    <span className="text-slate-400">Monthly Local Search Volume:</span>
+                    <strong className="text-amber-400">~{currentCityHub.monthlySearchesEst.toLocaleString()} searches</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-800">
+                    <span className="text-slate-400">Average Job Value:</span>
+                    <strong className="text-emerald-400">₹750 - ₹2,400</strong>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] font-semibold text-slate-400 block mb-2">High-Intent Service Hubs:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {currentCityHub.popularServices.map((srv, idx) => (
+                      <span key={idx} className="text-[11px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                        {srv}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Suburbs & Keywords */}
+              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-white block">Top Ranked Suburbs & Neighborhoods</span>
+                <p className="text-xs text-slate-400">
+                  Targeted with dedicated local landing pages for hyper-local Google indexing:
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {currentCityHub.topAreas.map((area, idx) => (
+                    <div key={idx} className="bg-slate-900 p-2 rounded-lg border border-slate-800/80 flex items-center space-x-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                      <span className="text-slate-300 truncate">{area}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      setActiveMode("consumer");
+                      setCustCity(currentCityHub.cityName);
+                    }}
+                    className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition flex items-center justify-center space-x-1"
+                  >
+                    <span>Launch {currentCityHub.cityName} Booking View</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Local Business JSON-LD Schema Snippet */}
+              <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-2 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">Google Schema.org JSON-LD</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">100% Valid</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Structured data for Google Search Console & Rich Snippets:
+                  </p>
+                  <pre className="bg-slate-900 p-2.5 rounded-lg text-[10px] text-slate-300 font-mono overflow-x-auto mt-2 max-h-36 border border-slate-800">
+{`{
+  "@context": "https://schema.org",
+  "@type": "HomeAndConstructionBusiness",
+  "name": "TradesOS ${currentCityHub.cityName}",
+  "areaServed": "${currentCityHub.cityName}",
+  "priceRange": "₹249 - ₹3500",
+  "telephone": "+91 98201 44521",
+  "openingHours": "Mo-Su 08:00-22:00"
+}`}
+                  </pre>
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`{
+  "@context": "https://schema.org",
+  "@type": "HomeAndConstructionBusiness",
+  "name": "TradesOS ${currentCityHub.cityName}",
+  "areaServed": "${currentCityHub.cityName}",
+  "priceRange": "₹249 - ₹3500"
+}`);
+                    alert("Schema JSON-LD copied to clipboard!");
+                  }}
+                  className="w-full py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition flex items-center justify-center space-x-1"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy Schema Tag</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Printable Shop Counter QR Flyer Generator */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                <Printer className="w-5 h-5 text-amber-400" />
+                <span>Printable Hardware & Sanitary Counter Flyer Generator</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Give these printable cards to local hardware shops. When customers buy plumbing or electrical parts, they scan the QR code to book a technician.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Flyer Config */}
+              <div className="space-y-3 text-xs bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Partner Hardware / Electrical Store Name</label>
+                  <input
+                    type="text"
+                    value={flyerShopName}
+                    onChange={(e) => setFlyerShopName(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Store / Dispatch Contact Phone</label>
+                  <input
+                    type="tel"
+                    value={flyerPhone}
+                    onChange={(e) => setFlyerPhone(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-3">
+                  <button
+                    onClick={() => window.print()}
+                    className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-amber-600/30 flex items-center justify-center space-x-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print In-Store Counter Flyer (A4 / A5)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Flyer Live Visual Card Preview */}
+              <div className="bg-gradient-to-br from-white via-slate-50 to-slate-100 text-slate-900 p-6 rounded-2xl border-4 border-amber-500 shadow-2xl space-y-4 text-center">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-amber-600">
+                    AUTHORIZED SERVICE DESK
+                  </span>
+                  <h4 className="text-xl font-black text-slate-950 uppercase">{flyerShopName}</h4>
+                  <p className="text-xs text-slate-600">In Partnership with TradesOS Verified Network</p>
+                </div>
+
+                <div className="bg-slate-950 text-white p-3 rounded-xl space-y-1">
+                  <p className="text-xs font-bold text-amber-400">NEED A PLUMBER, ELECTRICIAN OR TEMPO?</p>
+                  <p className="text-[11px] text-slate-300">Scan Below to Book a Background-Verified Pro in 45 Seconds</p>
+                </div>
+
+                {/* Simulated QR Code graphic */}
+                <div className="w-28 h-28 mx-auto bg-white border-2 border-slate-900 p-2 rounded-xl flex flex-col items-center justify-center shadow-inner">
+                  <QrCode className="w-20 h-20 text-slate-950" />
+                  <span className="text-[9px] font-mono text-slate-600 font-bold">SCAN ME</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1 text-[10px] font-bold text-slate-700 pt-1">
+                  <div className="bg-slate-200/80 p-1.5 rounded">✓ Fixed Rates</div>
+                  <div className="bg-slate-200/80 p-1.5 rounded">✓ 30-Day Guarantee</div>
+                  <div className="bg-slate-200/80 p-1.5 rounded">✓ WhatsApp Bill</div>
+                </div>
+
+                <p className="text-xs font-bold text-slate-900 pt-1">
+                  Helpline / WhatsApp: <span className="text-amber-700">{flyerPhone}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: RWA Society & WhatsApp Group Viral Scripts */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-5">
+            <div>
+              <h3 className="text-base font-bold text-white flex items-center space-x-2">
+                <Share2 className="w-5 h-5 text-emerald-400" />
+                <span>Apartment Society & RWA WhatsApp Outreach Kit</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Copy and paste these high-converting community announcements into your building WhatsApp groups, MyGate, or NoBrokerHood.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {RWA_VIRAL_SCRIPTS.map((script) => (
+                <div
+                  key={script.id}
+                  className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {script.language}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{script.target}</span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-white">{script.title}</h4>
+                    <p className="text-xs text-slate-300 font-mono bg-slate-900 p-2.5 rounded-lg border border-slate-800/80 whitespace-pre-wrap max-h-44 overflow-y-auto leading-relaxed">
+                      {script.text}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <button
+                      onClick={() => handleCopyScript(script.id, script.text)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                        copiedScriptId === script.id
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700"
+                      }`}
+                    >
+                      {copiedScriptId === script.id ? (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Script</span>
+                        </>
+                      )}
+                    </button>
+
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(script.text)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition"
+                      title="Share to WhatsApp"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODE 6: BILLIONAIRE ARR & VALUATION ROADMAP */}
       {activeMode === "billionaire" && (
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-blue-950/60 border border-amber-500/30 rounded-2xl p-6 sm:p-8 space-y-4">
